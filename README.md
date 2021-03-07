@@ -2,4 +2,4 @@
 
 ![Alt text](images/ConditionalCommandButton.png?raw=true "Conditional Command Button")
 
-![Alt text](images/ConditionalCommandButton.png?raw=true "Conditional Command Output")
+![Alt text](images/ConditionalCommandOutput.png?raw=true "Conditional Command Output")
