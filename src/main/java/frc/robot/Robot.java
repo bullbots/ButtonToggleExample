@@ -18,14 +18,11 @@ import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 import java.util.List;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
-
-  private final JoystickButton aButton = new JoystickButton(m_controller, 1);
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0
   // to 1.
