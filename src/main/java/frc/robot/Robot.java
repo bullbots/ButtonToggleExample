@@ -5,9 +5,11 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.IterativeRobotBase;
 import edu.wpi.first.wpilibj.SlewRateLimiter;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.controller.RamseteController;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
@@ -17,12 +19,18 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
+
+  // Logitech controller Mode off, Dual-action (D)
+  private final JoystickButton aButton = new JoystickButton(m_controller, 2);
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0
   // to 1.
@@ -42,19 +50,28 @@ public class Robot extends TimedRobot {
     // are sent during every iteration.
     setNetworkTablesFlushEnabled(true);
 
-    m_trajectory =
-        TrajectoryGenerator.generateTrajectory(
-            new Pose2d(2, 2, new Rotation2d()),
-            List.of(),
-            new Pose2d(6, 4, new Rotation2d()),
-            new TrajectoryConfig(2, 2));
+    m_trajectory = TrajectoryGenerator.generateTrajectory(new Pose2d(2, 2, new Rotation2d()), List.of(),
+        new Pose2d(6, 4, new Rotation2d()), new TrajectoryConfig(2, 2));
 
     configureButtons();
-  }
+    
+    if (Robot.isSimulation()) {
+      // Set timeout for WatchDog higher to avoid false-positives from simulations
+      try {
+        Field field = IterativeRobotBase.class.getDeclaredField("m_watchdog");
+        field.setAccessible(true);
+        Watchdog watchdog = (Watchdog) field.get(this);
+        watchdog.setTimeout(1.0);
+        } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
+          e.printStackTrace();
+        }
+      }
+    }
 
   @Override
   public void robotPeriodic() {
     m_drive.periodic();
+    CommandScheduler.getInstance().run();
   }
 
   @Override
@@ -97,11 +114,21 @@ public class Robot extends TimedRobot {
 
   public void configureButtons() {
     SmartDashboard.putData("ToggleCommand",
-    new ConditionalCommand(new CommandOne(), new CommandTwo(),
+      new ConditionalCommand(new CommandOne(), new CommandTwo(),
+        ()->{
+          System.out.println("SmartDashboard: Toggling state.");
+          toggleCommandState = !toggleCommandState;
+          return toggleCommandState;
+        })
+      );
+
+    // Physical joystick button command connections
+    aButton.whenPressed(new ConditionalCommand(new CommandOne(), new CommandTwo(),
       ()->{
-        System.out.println("Toggling state.");
+        System.out.println("A Button: Toggling state.");
         toggleCommandState = !toggleCommandState;
         return toggleCommandState;
-      }));
+      })
+    );
   }
 }
